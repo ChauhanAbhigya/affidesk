@@ -11,14 +11,12 @@ st.title("📄 AffiDesk - Hindi Affidavit Generator")
 # --------------------------
 # wkhtmltopdf Path
 # --------------------------
-path_wkhtmltopdf = os.getenv("WKHTMLTOPDF_PATH", "/usr/local/bin/wkhtmltopdf")
-if not os.path.exists(path_wkhtmltopdf):
-    st.error(f"⚠️ wkhtmltopdf not found at: {path_wkhtmltopdf}")
-    st.stop()
+# On Render, set environment variable: WKHTMLTOPDF_PATH=/usr/bin/wkhtmltopdf
+path_wkhtmltopdf = os.getenv("WKHTMLTOPDF_PATH", "/usr/bin/wkhtmltopdf")
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
 # --------------------------
-# HTML Template with Noto Sans Devanagari
+# HTML Template with Embedded Font
 # --------------------------
 template_text = """
 <!DOCTYPE html>
@@ -136,6 +134,7 @@ if submitted:
     st.success("✅ हलफनामा तैयार हो गया!")
     with open(output_file, "rb") as f:
         st.download_button("⬇️ हलफनामा डाउनलोड करें (PDF)", f, file_name="hindi_affidavit.pdf")
+
 
 
 
