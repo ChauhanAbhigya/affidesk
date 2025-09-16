@@ -37,59 +37,6 @@ with open(FONT_PATH, "rb") as f:
 font_base64 = base64.b64encode(font_data).decode()
 
 # --------------------------
-# HTML Template (curly braces escaped)
-# --------------------------
-template_text = f"""
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<style>
-@font-face {{
-    font-family: 'Noto Sans Devanagari';
-    src: url(data:font/truetype;charset=utf-8;base64,{font_base64}) format('truetype');
-}}
-body {{
-    font-family: 'Noto Sans Devanagari', sans-serif;
-    margin: 30px;
-    line-height: 1.6;
-}}
-h2 {{ text-align: center; margin-bottom: 20px; }}
-table {{ width: 100%; border-collapse: collapse; }}
-th, td {{ border: 1px solid #000; padding: 6px; text-align: center; }}
-th {{ background-color: #eee; }}
-.heirs-table {{ overflow-x: auto; }}
-.sapathkarta {{ text-align: right; margin-right: 50px; margin-top: 20px; }}
-</style>
-</head>
-<body>
-
-<div style="height:100px;"></div>
-<h2>हलफनामा</h2>
-
-<p>मनकि {{name}} {{son_or_daughter}} {{father_name}} निवासी मकान न० {{house_no}} {{village_name}} 
-तहसील {{tehsil}} जिला {{district}} हरियाणा का / की हूँ | जोकि मैं निम्नलिखित हलफन ब्यान 
-करते / करता हूँ |</p>  
-
-[[POINTS_HERE]]
-
-<div class="sapathkarta">
-    <p>सपथकर्ता</p>
-</div>
-
-<p><b>तसदीक-</b><br>
-तसदीक की जाती है कि उपरोक्त ब्यान हमारे ज्ञान व इल्म के अनुसार सही एवं दुरुस्त है  
-तथा इसमें हमने कुछ छुपाया नहीं है |</p>
-
-<div class="sapathkarta">
-    <p>सपथकर्ता</p>
-</div>
-
-</body>
-</html>
-"""
-
-# --------------------------
 # Input Form
 # --------------------------
 with st.form("affidavit_form"):
@@ -126,11 +73,13 @@ with st.form("affidavit_form"):
 # Generate PDF
 # --------------------------
 if submitted:
+    # Build heirs table
     heirs_html = '<div class="heirs-table"><table><tr><th>क्रम सं.</th><th>वारिस का नाम</th><th>मृतक से संबंध</th></tr>'
     for i, (hname, hrel) in enumerate(heirs, start=1):
         heirs_html += f"<tr><td>{i}</td><td>{hname}</td><td>{hrel}</td></tr>"
     heirs_html += "</table></div>"
 
+    # Build numbered points
     points = [
         f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} का मृत्यु रजिस्ट्रेशन न० {death_certificate_number} देहांत {date_of_death} को हो चुकी थी |",
         f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} के हम निम्नलिखित वारिसान हैं :<br>{heirs_html}",
@@ -146,11 +95,57 @@ if submitted:
     ]
 
     points_html = "".join([f"<p>{i+1}. {p}</p>\n" for i, p in enumerate(points)])
-    html_content = template_text.format(
-        name=name, son_or_daughter=son_or_daughter, father_name=father_name,
-        grandfather_name=grandfather_name, house_no=house_no, village_name=village_name,
-        tehsil=tehsil, district=district
-    ).replace("[[POINTS_HERE]]", points_html)
+
+    # Build full HTML using f-string (no .format)
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<style>
+@font-face {{
+    font-family: 'Noto Sans Devanagari';
+    src: url(data:font/truetype;charset=utf-8;base64,{font_base64}) format('truetype');
+}}
+body {{
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    margin: 30px;
+    line-height: 1.6;
+}}
+h2 {{ text-align: center; margin-bottom: 20px; }}
+table {{ width: 100%; border-collapse: collapse; }}
+th, td {{ border: 1px solid #000; padding: 6px; text-align: center; }}
+th {{ background-color: #eee; }}
+.heirs-table {{ overflow-x: auto; }}
+.sapathkarta {{ text-align: right; margin-right: 50px; margin-top: 20px; }}
+</style>
+</head>
+<body>
+
+<div style="height:100px;"></div>
+<h2>हलफनामा</h2>
+
+<p>मनकि {name} {son_or_daughter} {father_name} निवासी मकान न० {house_no} {village_name} 
+तहसील {tehsil} जिला {district} हरियाणा का / की हूँ | जोकि मैं निम्नलिखित हलफन ब्यान 
+करते / करता हूँ |</p>  
+
+{points_html}
+
+<div class="sapathkarta">
+    <p>सपथकर्ता</p>
+</div>
+
+<p><b>तसदीक-</b><br>
+तसदीक की जाती है कि उपरोक्त ब्यान हमारे ज्ञान व इल्म के अनुसार सही एवं दुरुस्त है  
+तथा इसमें हमने कुछ छुपाया नहीं है |</p>
+
+<div class="sapathkarta">
+    <p>सपथकर्ता</p>
+</div>
+
+</body>
+</html>
+"""
 
     output_file = "hindi_affidavit.pdf"
 
