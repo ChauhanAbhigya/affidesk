@@ -1,6 +1,13 @@
+import os
 import streamlit as st
 import pdfkit
-import os
+import base64
+
+# --------------------------
+# Headless fix for Render/Linux
+# --------------------------
+os.environ["XDG_RUNTIME_DIR"] = "/tmp/runtime-render"
+os.makedirs("/tmp/runtime-render", exist_ok=True)
 
 # --------------------------
 # Page Config
@@ -11,27 +18,43 @@ st.title("📄 AffiDesk - Hindi Affidavit Generator")
 # --------------------------
 # wkhtmltopdf Path
 # --------------------------
-# On Render, set environment variable: WKHTMLTOPDF_PATH=/usr/bin/wkhtmltopdf
 path_wkhtmltopdf = os.getenv("WKHTMLTOPDF_PATH", "/usr/bin/wkhtmltopdf")
+if not os.path.exists(path_wkhtmltopdf):
+    st.error(f"⚠️ wkhtmltopdf not found at {path_wkhtmltopdf}")
+    st.stop()
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
 # --------------------------
-# HTML Template with Embedded Font
+# Embed font as Base64
 # --------------------------
-template_text = """
+# You need to have the TTF file locally to encode once
+# (only during development, later the Base64 string is embedded)
+FONT_PATH = "NotoSansDevanagari-Regular.ttf"
+if not os.path.exists(FONT_PATH):
+    st.error(f"Font file {FONT_PATH} not found locally!")
+    st.stop()
+
+with open(FONT_PATH, "rb") as f:
+    font_data = f.read()
+font_base64 = base64.b64encode(font_data).decode()
+
+# --------------------------
+# HTML Template
+# --------------------------
+template_text = f"""
 <!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
 <style>
 @font-face {{
-  font-family: 'Noto Sans Devanagari';
-  src: url('fonts/NotoSansDevanagari-Regular.ttf') format('truetype');
+    font-family: 'Noto Sans Devanagari';
+    src: url(data:font/truetype;charset=utf-8;base64,{font_base64}) format('truetype');
 }}
 body {{
-  font-family: 'Noto Sans Devanagari', sans-serif;
-  margin: 30px;
-  line-height: 1.6;
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    margin: 30px;
+    line-height: 1.6;
 }}
 h2 {{ text-align: center; margin-bottom: 20px; }}
 table {{ width: 100%; border-collapse: collapse; }}
@@ -46,8 +69,8 @@ th {{ background-color: #eee; }}
 <div style="height:100px;"></div>
 <h2>हलफनामा</h2>
 
-<p>मनकि {name} {son_or_daughter} {father_name} निवासी मकान न० {house_no} {village_name} 
-तहसील {tehsil} जिला {district} हरियाणा का / की हूँ | जोकि मैं निम्नलिखित हलफन ब्यान 
+<p>मनकि {{name}} {{son_or_daughter}} {{father_name}} निवासी मकान न० {{house_no}} {{village_name}} 
+तहसील {{tehsil}} जिला {{district}} हरियाणा का / की हूँ | जोकि मैं निम्नलिखित हलफन ब्यान 
 करते / करता हूँ |</p>  
 
 [[POINTS_HERE]]
@@ -67,7 +90,6 @@ th {{ background-color: #eee; }}
 </body>
 </html>
 """
-
 
 # --------------------------
 # Input Form
@@ -111,16 +133,19 @@ if submitted:
         heirs_html += f"<tr><td>{i}</td><td>{hname}</td><td>{hrel}</td></tr>"
     heirs_html += "</table></div>"
 
-    points = []
-    points.append(f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} का मृत्यु रजिस्ट्रेशन न० {death_certificate_number} देहांत {date_of_death} को हो चुकी थी |")
-    points.append(f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} के हम निम्नलिखित वारिसान हैं :<br>{heirs_html}")
-    points.append(f"यह है कि उपरोक्त वारसान के इलावा मेरे पिताजी {father_name} पुत्र {grandfather_name} की जायदाद की संपत्ति के अन्य कोई वारसान नहीं है |")
-    points.append(f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} ने मरने से पहले एक ट्रांसफर डीड वासिका न० {transfer_deed_number} दिनांक {date_of_transfer_deed} को तहसील {tehsil} {district} हरियाणा में अपने {no_of_sons} के हक में कर दी थी |")
+    points = [
+        f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} का मृत्यु रजिस्ट्रेशन न० {death_certificate_number} देहांत {date_of_death} को हो चुकी थी |",
+        f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} के हम निम्नलिखित वारिसान हैं :<br>{heirs_html}",
+        f"यह है कि उपरोक्त वारसान के इलावा मेरे पिताजी {father_name} पुत्र {grandfather_name} की जायदाद की संपत्ति के अन्य कोई वारसान नहीं है |",
+        f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} ने मरने से पहले एक ट्रांसफर डीड वासिका न० {transfer_deed_number} दिनांक {date_of_transfer_deed} को तहसील {tehsil} {district} हरियाणा में अपने {no_of_sons} के हक में कर दी थी |"
+    ]
     if include_point5:
         points.append(f"यह है कि गाँव {village_name} में खेवट न० {khewat_number} में पहले स्टे था लेकिन अब वह स्टे हट गई है |")
-    points.append("यह है कि विरासत का इंतक़ाल राजस्व विभाग में उपरोक्त नामों पर दर्ज किया जावे | मुझे किसी प्रकार का कोई उज़र व ऐतराज़ नहीं होगा |")
-    points.append("यह है कि उपरोक्त वारिसान की जिम्मेवारी मेरी स्वयं की होगी |")
-    points.append("यह है कि हमारे उपरोक्त लिखित कथन सत्य व दुरुस्त है |")
+    points += [
+        "यह है कि विरासत का इंतक़ाल राजस्व विभाग में उपरोक्त नामों पर दर्ज किया जावे | मुझे किसी प्रकार का कोई उज़र व ऐतराज़ नहीं होगा |",
+        "यह है कि उपरोक्त वारिसान की जिम्मेवारी मेरी स्वयं की होगी |",
+        "यह है कि हमारे उपरोक्त लिखित कथन सत्य व दुरुस्त है |"
+    ]
 
     points_html = "".join([f"<p>{i+1}. {p}</p>\n" for i, p in enumerate(points)])
     html_content = template_text.format(
@@ -130,11 +155,25 @@ if submitted:
     ).replace("[[POINTS_HERE]]", points_html)
 
     output_file = "hindi_affidavit.pdf"
-    pdfkit.from_string(html_content, output_file, configuration=config, options={"encoding": "UTF-8"})
+
+    pdfkit.from_string(
+        html_content,
+        output_file,
+        configuration=config,
+        options={
+            "encoding": "UTF-8",
+            "enable-local-file-access": "",
+            "no-outline": None,
+            "disable-smart-shrinking": "",
+            "no-stop-slow-scripts": "",
+            "no-sandbox": ""
+        }
+    )
 
     st.success("✅ हलफनामा तैयार हो गया!")
     with open(output_file, "rb") as f:
         st.download_button("⬇️ हलफनामा डाउनलोड करें (PDF)", f, file_name="hindi_affidavit.pdf")
+
 
 
 
