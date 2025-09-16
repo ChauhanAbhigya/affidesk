@@ -1,10 +1,16 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
+# --------------------------
+# Update package lists (no sudo needed on Render)
+# --------------------------
+apt-get update -y
 
-echo "🛠️ Updating Python packages..."
-python3 -m pip install --upgrade pip
+# --------------------------
+# Install wkhtmltopdf and fontconfig (required for PDF generation)
+# --------------------------
+apt-get install -y wkhtmltopdf fontconfig
 
-echo "📦 Installing Python dependencies..."
+# --------------------------
+# Install Python dependencies
+# --------------------------
+pip install --upgrade pip
 pip install -r requirements.txt
-
-echo "✅ Build completed successfully!"
