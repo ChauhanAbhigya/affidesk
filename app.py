@@ -73,13 +73,11 @@ with st.form("affidavit_form"):
 # Generate PDF
 # --------------------------
 if submitted:
-    # Build heirs table
     heirs_html = '<div class="heirs-table"><table><tr><th>क्रम सं.</th><th>वारिस का नाम</th><th>मृतक से संबंध</th></tr>'
     for i, (hname, hrel) in enumerate(heirs, start=1):
         heirs_html += f"<tr><td>{i}</td><td>{hname}</td><td>{hrel}</td></tr>"
     heirs_html += "</table></div>"
 
-    # Build numbered points
     points = [
         f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} का मृत्यु रजिस्ट्रेशन न० {death_certificate_number} देहांत {date_of_death} को हो चुकी थी |",
         f"यह है कि मेरे पिताजी {father_name} पुत्र {grandfather_name} के हम निम्नलिखित वारिसान हैं :<br>{heirs_html}",
@@ -96,7 +94,6 @@ if submitted:
 
     points_html = "".join([f"<p>{i+1}. {p}</p>\n" for i, p in enumerate(points)])
 
-    # Build full HTML using f-string (no .format)
     html_content = f"""
 <!DOCTYPE html>
 <html lang="hi">
@@ -149,24 +146,17 @@ th {{ background-color: #eee; }}
 
     output_file = "hindi_affidavit.pdf"
 
-    pdfkit.from_string(
-        html_content,
-        output_file,
-        configuration=config,
-        options={
-            "encoding": "UTF-8",
-            "enable-local-file-access": "",
-            "no-outline": None,
-            "disable-smart-shrinking": "",
-            "no-stop-slow-scripts": "",
-            "no-sandbox": ""
-        }
-    )
+    # Render-safe options
+    options = {
+        "encoding": "UTF-8",
+        "enable-local-file-access": ""
+    }
+
+    pdfkit.from_string(html_content, output_file, configuration=config, options=options)
 
     st.success("✅ हलफनामा तैयार हो गया!")
     with open(output_file, "rb") as f:
         st.download_button("⬇️ हलफनामा डाउनलोड करें (PDF)", f, file_name="hindi_affidavit.pdf")
-
 
 
 
