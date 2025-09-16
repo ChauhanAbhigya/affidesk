@@ -24,21 +24,21 @@ template_text = """
 <head>
 <meta charset="UTF-8">
 <style>
-@font-face {
+@font-face {{
   font-family: 'Noto Sans Devanagari';
   src: url('fonts/NotoSansDevanagari-Regular.ttf') format('truetype');
-}
-body {
+}}
+body {{
   font-family: 'Noto Sans Devanagari', sans-serif;
   margin: 30px;
   line-height: 1.6;
-}
-h2 { text-align: center; margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #000; padding: 6px; text-align: center; }
-th { background-color: #eee; }
-.heirs-table { overflow-x: auto; }
-.sapathkarta { text-align: right; margin-right: 50px; margin-top: 20px; }
+}}
+h2 {{ text-align: center; margin-bottom: 20px; }}
+table {{ width: 100%; border-collapse: collapse; }}
+th, td {{ border: 1px solid #000; padding: 6px; text-align: center; }}
+th {{ background-color: #eee; }}
+.heirs-table {{ overflow-x: auto; }}
+.sapathkarta {{ text-align: right; margin-right: 50px; margin-top: 20px; }}
 </style>
 </head>
 <body>
@@ -67,6 +67,7 @@ th { background-color: #eee; }
 </body>
 </html>
 """
+
 
 # --------------------------
 # Input Form
@@ -134,6 +135,7 @@ if submitted:
     st.success("✅ हलफनामा तैयार हो गया!")
     with open(output_file, "rb") as f:
         st.download_button("⬇️ हलफनामा डाउनलोड करें (PDF)", f, file_name="hindi_affidavit.pdf")
+
 
 
 
