@@ -27,8 +27,6 @@ config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 # --------------------------
 # Embed font as Base64
 # --------------------------
-# You need to have the TTF file locally to encode once
-# (only during development, later the Base64 string is embedded)
 FONT_PATH = "NotoSansDevanagari-Regular.ttf"
 if not os.path.exists(FONT_PATH):
     st.error(f"Font file {FONT_PATH} not found locally!")
@@ -39,7 +37,7 @@ with open(FONT_PATH, "rb") as f:
 font_base64 = base64.b64encode(font_data).decode()
 
 # --------------------------
-# HTML Template
+# HTML Template (curly braces escaped)
 # --------------------------
 template_text = f"""
 <!DOCTYPE html>
@@ -173,6 +171,8 @@ if submitted:
     st.success("✅ हलफनामा तैयार हो गया!")
     with open(output_file, "rb") as f:
         st.download_button("⬇️ हलफनामा डाउनलोड करें (PDF)", f, file_name="hindi_affidavit.pdf")
+
+
 
 
 
